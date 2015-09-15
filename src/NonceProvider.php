@@ -29,7 +29,7 @@ class NonceProvider implements NonceProviderInterface
      * @param int $ttl
      *   Time to live for stored values, in seconds. By default 20 minutes.
      */
-    function __construct(
+    public function __construct(
         ClientInterface $client,
         $ttl = NonceProvider::DEFAULT_TTL
     ) {
