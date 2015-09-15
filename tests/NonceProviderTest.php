@@ -90,4 +90,27 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($succeeded);
     }
+
+    /**
+     * Data provider with invalid values for the constructor $ttl argument.
+     */
+    public function invalidTTLProvider()
+    {
+        return [
+            ['foo'],
+            [0],
+            [-1],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider invalidTTLProvider
+     * @param mixed $invalidTTLValue
+     */
+    public function it_only_accepts_integers_bigger_than_zero_for_ttl($invalidTTLValue)
+    {
+        $this->setExpectedException(\InvalidArgumentException::class);
+        new NonceProvider($this->client, $invalidTTLValue);
+    }
 }
