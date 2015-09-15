@@ -6,6 +6,8 @@
 namespace CultuurNet\SymfonySecurityOAuthRedis;
 
 use CultuurNet\SymfonySecurityOAuth\Model\Consumer;
+use M6Web\Component\RedisMock\RedisMockFactory;
+use Predis\Client;
 use Predis\ClientInterface;
 
 class NonceProviderTest extends \PHPUnit_Framework_TestCase
@@ -27,11 +29,10 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->client = $this->getMock(ClientInterface::class);
+        $factory = new RedisMockFactory();
+        $this->client = $factory->getAdapter(Client::class, true);
 
-        $this->nonceProvider = new NonceProvider(
-            $this->client
-        );
+        $this->nonceProvider = new NonceProvider($this->client);
 
         $this->consumer = new Consumer();
         $this->consumer->setConsumerKey('abc');
@@ -40,21 +41,21 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function it_checks_for_already_used_nonces_per_consumer()
+    public function it_checks_for_already_used_nonces_per_consumer_and_timestamp()
     {
-        $anotherConsumer = new Consumer();
-        $anotherConsumer->setConsumerKey('xyz');
+        $nonceIsAcceptable = $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            500,
+            $this->consumer
+        );
 
-        $this->client->expects($this->exactly(2))
-            ->method('__call')
-            ->withConsecutive(
-                ['exists', ['abc-foo']],
-                ['exists', ['xyz-foo']]
-            )
-            ->willReturnOnConsecutiveCalls(
-                true,
-                false
-            );
+        $this->assertTrue($nonceIsAcceptable);
+
+        $this->nonceProvider->registerNonceAndTimestamp(
+            'foo',
+            500,
+            $this->consumer
+        );
 
         $nonceIsAcceptable = $this->nonceProvider->checkNonceAndTimestampUnicity(
             'foo',
@@ -64,13 +65,24 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertFalse($nonceIsAcceptable);
 
-        $nonceIsAcceptable = $this->nonceProvider->checkNonceAndTimestampUnicity(
+        $anotherNonceIsAcceptable = $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'bar',
+            500,
+            $this->consumer
+        );
+
+        $this->assertTrue($anotherNonceIsAcceptable);
+
+        $anotherConsumer = new Consumer();
+        $anotherConsumer->setConsumerKey('xyz');
+
+        $nonceForAnotherConsumerIsAcceptable = $this->nonceProvider->checkNonceAndTimestampUnicity(
             'foo',
             500,
             $anotherConsumer
         );
 
-        $this->assertTrue($nonceIsAcceptable);
+        $this->assertTrue($nonceForAnotherConsumerIsAcceptable);
     }
 
     /**
@@ -78,17 +90,16 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
      */
     public function it_sets_an_expiry_when_registering_used_nonces()
     {
-        $this->client->expects($this->once())
-            ->method('__call')
-            ->with('set', ['abc-foo', 500, 'ex', NonceProvider::DEFAULT_TTL]);
-
-        $succeeded = $this->nonceProvider->registerNonceAndTimestamp(
+        $this->nonceProvider->registerNonceAndTimestamp(
             'foo',
             500,
             $this->consumer
         );
 
-        $this->assertTrue($succeeded);
+        $remainingTtl = $this->client->ttl('nonces/key:abc/timestamp:500');
+
+        $this->assertLessThanOrEqual(NonceProvider::DEFAULT_TTL, $remainingTtl);
+        $this->assertGreaterThanOrEqual(NonceProvider::DEFAULT_TTL - 1, $remainingTtl);
     }
 
     /**

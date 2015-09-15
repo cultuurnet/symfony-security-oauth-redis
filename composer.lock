@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "577a1a6b6aaa835dca0f1f0c8215f087",
+    "hash": "f3b9e01a554d0ce9835b2209f0b7671c",
     "packages": [
         {
             "name": "cultuurnet/clock",
@@ -53,12 +53,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/cultuurnet/symfony-security-oauth.git",
-                "reference": "2bc40bce7585d8f5258d914f361c20a3342f7b7c"
+                "reference": "90706f0daa01c52aebaae34cb242c90af01ae0f4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cultuurnet/symfony-security-oauth/zipball/2bc40bce7585d8f5258d914f361c20a3342f7b7c",
-                "reference": "2bc40bce7585d8f5258d914f361c20a3342f7b7c",
+                "url": "https://api.github.com/repos/cultuurnet/symfony-security-oauth/zipball/90706f0daa01c52aebaae34cb242c90af01ae0f4",
+                "reference": "90706f0daa01c52aebaae34cb242c90af01ae0f4",
                 "shasum": ""
             },
             "require": {
@@ -102,7 +102,7 @@
                 }
             ],
             "description": "Brief description of this PHP library",
-            "time": "2015-09-15 11:29:02"
+            "time": "2015-09-15 13:41:52"
         },
         {
             "name": "predis/predis",
@@ -664,6 +664,51 @@
                 "web service"
             ],
             "time": "2015-03-18 18:23:50"
+        },
+        {
+            "name": "m6web/redis-mock",
+            "version": "v2.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/M6Web/RedisMock.git",
+                "reference": "e4690f4ad820fc0659ad43f9c6d92ae22d8732a9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/M6Web/RedisMock/zipball/e4690f4ad820fc0659ad43f9c6d92ae22d8732a9",
+                "reference": "e4690f4ad820fc0659ad43f9c6d92ae22d8732a9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "atoum/atoum": "master-dev",
+                "predis/predis": "~0.8"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "M6Web\\Component\\RedisMock": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "M6Web",
+                    "email": "opensource@m6web.fr",
+                    "homepage": "http://tech.m6web.fr/"
+                }
+            ],
+            "description": "Library providing a PHP mock for Redis",
+            "keywords": [
+                "mock",
+                "redis"
+            ],
+            "time": "2015-08-30 19:39:03"
         },
         {
             "name": "phing/phing",

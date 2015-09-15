@@ -51,13 +51,13 @@ class NonceProvider implements NonceProviderInterface
     }
 
     /**
-     * @param string $nonce
+     * @param integer $timestamp
      * @param ConsumerInterface $consumer
      * @return string
      */
-    private function redisKey($nonce, ConsumerInterface $consumer)
+    private function noncesRedisKey(ConsumerInterface $consumer, $timestamp)
     {
-        return $consumer->getConsumerKey() . '-' . $nonce;
+        return "nonces/key:{$consumer->getConsumerKey()}/timestamp:{$timestamp}";
     }
 
     /**
@@ -65,7 +65,8 @@ class NonceProvider implements NonceProviderInterface
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
     {
-        $exists = $this->client->exists($this->redisKey($nonce, $consumer));
+        $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
+        $exists = $this->client->sismember($noncesRedisKey, $nonce);
 
         return !$exists;
     }
@@ -75,12 +76,9 @@ class NonceProvider implements NonceProviderInterface
      */
     public function registerNonceAndTimestamp($nonce, $timestamp, ConsumerInterface $consumer)
     {
-        $this->client->set(
-            $this->redisKey($nonce, $consumer),
-            $timestamp,
-            'ex',
-            $this->ttl
-        );
+        $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
+        $this->client->sadd($noncesRedisKey, [$nonce]);
+        $this->client->expire($noncesRedisKey, $this->ttl);
 
         return true;
     }
