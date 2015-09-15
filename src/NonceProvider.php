@@ -64,7 +64,9 @@ class NonceProvider implements NonceProviderInterface
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
     {
-        return $this->client->exists($this->redisKey($nonce, $consumer));
+        $exists = $this->client->exists($this->redisKey($nonce, $consumer));
+
+        return !$exists;
     }
 
     /**
@@ -77,11 +79,14 @@ class NonceProvider implements NonceProviderInterface
     {
         return $this->client->set(
             $this->redisKey($nonce, $consumer),
-            [
-                'nonce' => $nonce,
-                'timestamp' => $timestamp,
-                'consumer' => $consumer->getConsumerKey()
-            ],
+            json_encode(
+                [
+                    'nonce' => $nonce,
+                    'timestamp' => $timestamp,
+                    'consumer' => $consumer->getConsumerKey()
+                ]
+            ),
+            'ex',
             $this->ttl
         );
     }
