@@ -11,6 +11,8 @@ use Predis\ClientInterface;
 
 class NonceProvider implements NonceProviderInterface
 {
+    const DEFAULT_TTL = 1200;
+
     /**
      * @var ClientInterface
      */
@@ -27,8 +29,10 @@ class NonceProvider implements NonceProviderInterface
      * @param int $ttl
      *   Time to live for stored values, in seconds. By default 20 minutes.
      */
-    function __construct(ClientInterface $client, $ttl = 1200)
-    {
+    function __construct(
+        ClientInterface $client,
+        $ttl = NonceProvider::DEFAULT_TTL
+    ) {
         $this->client = $client;
 
         if (!is_int($ttl)) {
@@ -53,14 +57,11 @@ class NonceProvider implements NonceProviderInterface
      */
     private function redisKey($nonce, ConsumerInterface $consumer)
     {
-        return sha1($consumer->getConsumerKey() . '-' . $nonce);
+        return $consumer->getConsumerKey() . '-' . $nonce;
     }
 
     /**
-     * @param $nonce
-     * @param $timestamp
-     * @param  \CultuurNet\SymfonySecurityOAuth\Model\ConsumerInterface $consumer
-     * @return boolean
+     * @inheritdoc
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
     {
@@ -70,24 +71,17 @@ class NonceProvider implements NonceProviderInterface
     }
 
     /**
-     * @param $nonce
-     * @param $timestamp
-     * @param  \CultuurNet\SymfonySecurityOAuth\Model\ConsumerInterface $consumer
-     * @return boolean
+     * @inheritdoc
      */
     public function registerNonceAndTimestamp($nonce, $timestamp, ConsumerInterface $consumer)
     {
-        return $this->client->set(
+        $this->client->set(
             $this->redisKey($nonce, $consumer),
-            json_encode(
-                [
-                    'nonce' => $nonce,
-                    'timestamp' => $timestamp,
-                    'consumer' => $consumer->getConsumerKey()
-                ]
-            ),
+            $timestamp,
             'ex',
             $this->ttl
         );
+
+        return true;
     }
 }
