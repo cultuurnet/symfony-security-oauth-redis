@@ -65,6 +65,28 @@ class NonceProvider implements NonceProviderInterface
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
     {
+        // Check timestamp: The timestamp value MUST be a positive integer
+        // and MUST be equal or greater than the timestamp used in previous requests.
+        // @see http://oauth.net/core/1.0/#nonce
+        if (!is_integer($timestamp)) {
+            throw new \InvalidArgumentException(
+                'Timestamp should be an integer, got ' . $this->checkPlain($timestamp)
+            );
+        }
+
+        if ($timestamp < 0) {
+            throw new \InvalidArgumentException(
+                'Timestamp should be a positive number bigger than 0, got ' . $this->checkPlain($timestamp)
+            );
+        }
+
+        //$maxTimestamp = $this->client->
+        /*if ($timestamp < $maxTimestamp) {
+            throw new \InvalidArgumentException(
+                'Timestamp must be bigger than the last timestamp we have recorded'
+            );
+        }*/
+
         $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
         $exists = $this->client->sismember($noncesRedisKey, $nonce);
 
@@ -81,5 +103,10 @@ class NonceProvider implements NonceProviderInterface
         $this->client->expire($noncesRedisKey, $this->ttl);
 
         return true;
+    }
+
+    protected function checkPlain($text)
+    {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     }
 }

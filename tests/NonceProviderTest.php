@@ -124,4 +124,55 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
         $this->setExpectedException(\InvalidArgumentException::class);
         new NonceProvider($this->client, $invalidTTLValue);
     }
+
+    /**
+     * @test
+     */
+    public function it_throws_an_error_when_using_a_text_timestamp()
+    {
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'Timestamp should be an integer, got abcdef'
+        );
+
+        $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            'abcdef',
+            $this->consumer
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_an_error_when_using_a_negative_timestamp()
+    {
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'Timestamp should be a positive number bigger than 0, got -123456'
+        );
+
+        $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            -123456,
+            $this->consumer
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_an_error_when_using_a_decimal_timestamp()
+    {
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'Timestamp should be an integer, got 1234.56'
+        );
+
+        $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            1234.56,
+            $this->consumer
+        );
+    }
 }
