@@ -124,28 +124,6 @@ class TokenProviderCacheTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-//    public function testFlushTokenCache()
-//    {
-//        $this->client->set('key1', 'test');
-//        $token = $this->tokenProvider->getAccessTokenByToken('nnch734d00sl2jdk');
-//        $serializedToken = serialize($token);
-//        $key1 = 'tokenProvider/token/key:nnch734d00sl2jdk';
-//        $this->client->set($key1, $serializedToken);
-//        $key2 = 'tokenProvider/token/key:testtesttest';
-//        $this->client->set($key2, $serializedToken);
-//
-//        $this->tokenProviderCache->cacheFlush();
-//
-//        $unflushedKey = $this->client->get('key1');
-//        $this->assertEquals('test', $unflushedKey, 'Other keys are not flushed');
-//
-//        $token = $this->client->get($key1);
-//        $this->assertEquals(null, $token, 'Token key1 gets flushed');
-//
-//        $token2 = $this->client->get($key2);
-//        $this->assertEquals(null, $token2, 'Token key2 gets flushed');
-//    }
-
     public function testSettingACustomExpiration()
     {
         $token = $this->tokenProvider->getAccessTokenByToken('nnch734d00sl2jdk');
@@ -156,5 +134,19 @@ class TokenProviderCacheTest extends \PHPUnit_Framework_TestCase
         $ttl = $this->client->ttl($key);
 
         $this->assertEquals(500, $ttl);
+    }
+
+    /**
+     * @test
+     */
+    public function testGettingcachedVersionOfToken()
+    {
+        // First time, we get token from API, it gets cached.
+        $token = $this->tokenProviderCache->getAccessTokenByToken('nnch734d00sl2jdk');
+
+        // Second time, this should be the cached token.
+        $token2 = $this->tokenProviderCache->getAccessTokenByToken('nnch734d00sl2jdk');
+
+        $this->assertEquals($token, $token2);
     }
 }
