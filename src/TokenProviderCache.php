@@ -15,17 +15,6 @@ class TokenProviderCache implements TokenProviderInterface
 {
     const DEFAULT_TTL = 1200;
 
-    /**
-     * Delete by prefix lua script
-     */
-    const EVAL_DELETE_PREFIX = <<<EOT
-local keys = redis.call("KEYS", ARGV[1])
-for i, k in ipairs(keys) do
-    redis.call("DEL", k)
-end
-return 1
-EOT;
-
     /** @var TokenProviderInterface */
     protected $tokenProvider;
 
@@ -117,16 +106,6 @@ EOT;
 
         $this->client->expire($key, $this->ttl);
     }
-
-    /**
-     * Flush the tokenProvider cache (based on the key prefix)
-     */
-    protected function cacheFlush()
-    {
-        $prefix = $this->tokenKeyPrefix();
-        $this->client->eval(self::EVAL_DELETE_PREFIX, 0, $prefix . '*');
-    }
-
 
     /**
      * @param string $oauth_token
