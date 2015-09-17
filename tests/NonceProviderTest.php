@@ -132,7 +132,7 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'Timestamp should be an integer, got abcdef'
+            'Timestamp should be a positive integer, got abcdef'
         );
 
         $this->nonceProvider->checkNonceAndTimestampUnicity(
@@ -149,7 +149,7 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'Timestamp should be a positive number bigger than 0, got -123456'
+            'imestamp should be a positive integer, got -123456'
         );
 
         $this->nonceProvider->checkNonceAndTimestampUnicity(
@@ -159,6 +159,17 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function it_does_not_throw_an_error_when_using_correct_timestamp()
+    {
+        $result = $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            '1442398946',
+            $this->consumer
+        );
+
+        $this->assertTrue($result);
+    }
+
     /**
      * @test
      */
@@ -166,7 +177,7 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException(
             'InvalidArgumentException',
-            'Timestamp should be an integer, got 1234.56'
+            'Timestamp should be a positive integer, got 1234.56'
         );
 
         $this->nonceProvider->checkNonceAndTimestampUnicity(
@@ -174,5 +185,50 @@ class NonceProviderTest extends \PHPUnit_Framework_TestCase
             1234.56,
             $this->consumer
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_an_error_when_using_a_timestamp_smaller_than_last_registered()
+    {
+        $this->client->zadd("timestamps/key:{$this->consumer->getConsumerKey()}", 500, 500);
+
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'Timestamp must be bigger than your last timestamp we have recorded'
+        );
+
+        $this->nonceProvider->checkNonceAndTimestampUnicity(
+            'foo',
+            499,
+            $this->consumer
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_only_keeps_the_last_ten_timestamps_per_consumer()
+    {
+        $key = "timestamps/key:{$this->consumer->getConsumerKey()}";
+
+        $this->nonceProvider->registerNonceAndTimestamp('wNcUhAXuMe', 500, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('dTAmpjPUbk', 600, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('blnDetYfmx', 700, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('SiakXrdbZv', 800, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('cduemCfTOQ', 900, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('MMoVLLMHOn', 1000, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('BGRvLDLmdz', 1100, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('jRQiFtutXj', 1200, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('RwwgRAOYlG', 1300, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('WTjPgqtpFM', 1400, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('EhnRTUPMaZ', 1500, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('RZiDsxDded', 1600, $this->consumer);
+        $this->nonceProvider->registerNonceAndTimestamp('FiWVeIpbBm', 1700, $this->consumer);
+
+        $count = count($this->client->zrange($key, 0, -1));
+
+        $this->assertEquals(1, $count);
     }
 }

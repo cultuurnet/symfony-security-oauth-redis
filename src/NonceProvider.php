@@ -8,6 +8,7 @@ namespace CultuurNet\SymfonySecurityOAuthRedis;
 use CultuurNet\SymfonySecurityOAuth\Model\ConsumerInterface;
 use CultuurNet\SymfonySecurityOAuth\Model\Provider\NonceProviderInterface;
 use Predis\ClientInterface;
+use Symfony\Component\Security\Acl\Exception\Exception;
 
 class NonceProvider implements NonceProviderInterface
 {
@@ -61,6 +62,15 @@ class NonceProvider implements NonceProviderInterface
     }
 
     /**
+     * @param ConsumerInterface $consumer
+     * @return string
+     */
+    private function timestampsKey(ConsumerInterface $consumer)
+    {
+        return "timestamps/key:{$consumer->getConsumerKey()}";
+    }
+
+    /**
      * @inheritdoc
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
@@ -68,27 +78,32 @@ class NonceProvider implements NonceProviderInterface
         // Check timestamp: The timestamp value MUST be a positive integer
         // and MUST be equal or greater than the timestamp used in previous requests.
         // @see http://oauth.net/core/1.0/#nonce
-        if (!is_integer($timestamp)) {
+        if (!ctype_digit($timestamp)) {
             throw new \InvalidArgumentException(
-                'Timestamp should be an integer, got ' . $this->checkPlain($timestamp)
+                'Timestamp should be a positive integer, got ' . $this->checkPlain($timestamp)
             );
         }
 
-        if ($timestamp < 0) {
-            throw new \InvalidArgumentException(
-                'Timestamp should be a positive number bigger than 0, got ' . $this->checkPlain($timestamp)
-            );
-        }
+        $timestampsKey = $this->timestampsKey($consumer);
+        $sortedSet = $this->client->zrevrange($timestampsKey, 0, -1);
+        if (is_array($sortedSet) && !empty($sortedSet)) {
+            $maxTimestamp = $sortedSet[0];
 
-        //$maxTimestamp = $this->client->
-        /*if ($timestamp < $maxTimestamp) {
-            throw new \InvalidArgumentException(
-                'Timestamp must be bigger than the last timestamp we have recorded'
-            );
-        }*/
+            if ($timestamp < $maxTimestamp) {
+                throw new \InvalidArgumentException(
+                    'Timestamp must be bigger than your last timestamp we have recorded'
+                );
+            }
+        }
 
         $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
         $exists = $this->client->sismember($noncesRedisKey, $nonce);
+
+//        if (!$exists) {
+//            if (!$this->registerNonceAndTimestamp($nonce, $timestamp, $consumer)) {
+//                throw new Exception('Registering nonce and timestamp failed');
+//            }
+//        }
 
         return !$exists;
     }
@@ -101,6 +116,15 @@ class NonceProvider implements NonceProviderInterface
         $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
         $this->client->sadd($noncesRedisKey, [$nonce]);
         $this->client->expire($noncesRedisKey, $this->ttl);
+        $timestampsKey = $this->timestampsKey($consumer);
+        $this->client->zadd($timestampsKey, $timestamp, $timestamp);
+
+        // While we're here, only keep the top 10 items.
+        $sortedSet = $this->client->zrevrange($timestampsKey, 0, -1);
+        if (is_array($sortedSet) && !empty($sortedSet)) {
+            $lastTimestamp = $sortedSet[0];
+            $this->client->zremrangebyscore($timestampsKey, 0, $lastTimestamp - 1);
+        }
 
         return true;
     }
