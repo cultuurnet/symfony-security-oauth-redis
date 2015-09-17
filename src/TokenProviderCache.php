@@ -111,7 +111,7 @@ EOT;
     {
         $this->client->set($key, $value);
 
-        if (!empty($this->expiration)) {
+        if (!empty($expiration)) {
             $this->ttl = $expiration;
         }
 

@@ -145,4 +145,16 @@ class TokenProviderCacheTest extends \PHPUnit_Framework_TestCase
 //        $token2 = $this->client->get($key2);
 //        $this->assertEquals(null, $token2, 'Token key2 gets flushed');
 //    }
+
+    public function testSettingACustomExpiration()
+    {
+        $token = $this->tokenProvider->getAccessTokenByToken('nnch734d00sl2jdk');
+        $serializedToken = serialize($token);
+        $key = 'tokenProvider/token/key:nnch734d00sl2jdk';
+
+        $this->tokenProviderCache->cacheSet($key, $serializedToken, 500);
+        $ttl = $this->client->ttl($key);
+
+        $this->assertEquals(500, $ttl);
+    }
 }
