@@ -53,12 +53,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/cultuurnet/symfony-security-oauth.git",
-                "reference": "90706f0daa01c52aebaae34cb242c90af01ae0f4"
+                "reference": "06490cfd3af827f2bc3807bbe320c50baefb6ce6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cultuurnet/symfony-security-oauth/zipball/90706f0daa01c52aebaae34cb242c90af01ae0f4",
-                "reference": "90706f0daa01c52aebaae34cb242c90af01ae0f4",
+                "url": "https://api.github.com/repos/cultuurnet/symfony-security-oauth/zipball/06490cfd3af827f2bc3807bbe320c50baefb6ce6",
+                "reference": "06490cfd3af827f2bc3807bbe320c50baefb6ce6",
                 "shasum": ""
             },
             "require": {
@@ -102,7 +102,7 @@
                 }
             ],
             "description": "Brief description of this PHP library",
-            "time": "2015-09-15 13:41:52"
+            "time": "2015-09-18 09:50:09"
         },
         {
             "name": "predis/predis",

@@ -8,7 +8,6 @@ namespace CultuurNet\SymfonySecurityOAuthRedis;
 use CultuurNet\SymfonySecurityOAuth\Model\ConsumerInterface;
 use CultuurNet\SymfonySecurityOAuth\Model\Provider\NonceProviderInterface;
 use Predis\ClientInterface;
-use Symfony\Component\Security\Acl\Exception\Exception;
 
 class NonceProvider implements NonceProviderInterface
 {
@@ -71,7 +70,12 @@ class NonceProvider implements NonceProviderInterface
     }
 
     /**
-     * @inheritdoc
+     * Helper function to perform necessary checks on timestamp and nonce.
+     *
+     * @param $nonce
+     * @param $timestamp
+     * @param ConsumerInterface $consumer
+     * @return bool
      */
     public function checkNonceAndTimestampUnicity($nonce, $timestamp, ConsumerInterface $consumer)
     {
@@ -99,12 +103,6 @@ class NonceProvider implements NonceProviderInterface
         $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
         $exists = $this->client->sismember($noncesRedisKey, $nonce);
 
-//        if (!$exists) {
-//            if (!$this->registerNonceAndTimestamp($nonce, $timestamp, $consumer)) {
-//                throw new Exception('Registering nonce and timestamp failed');
-//            }
-//        }
-
         return !$exists;
     }
 
@@ -113,20 +111,24 @@ class NonceProvider implements NonceProviderInterface
      */
     public function registerNonceAndTimestamp($nonce, $timestamp, ConsumerInterface $consumer)
     {
-        $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
-        $this->client->sadd($noncesRedisKey, [$nonce]);
-        $this->client->expire($noncesRedisKey, $this->ttl);
-        $timestampsKey = $this->timestampsKey($consumer);
-        $this->client->zadd($timestampsKey, $timestamp, $timestamp);
+        if ($this->checkNonceAndTimestampUnicity($nonce, $timestamp, $consumer)) {
+            $noncesRedisKey = $this->noncesRedisKey($consumer, $timestamp);
+            $this->client->sadd($noncesRedisKey, [$nonce]);
+            $this->client->expire($noncesRedisKey, $this->ttl);
+            $timestampsKey = $this->timestampsKey($consumer);
+            $this->client->zadd($timestampsKey, $timestamp, $timestamp);
 
-        // While we're here, only keep the top 10 items.
-        $sortedSet = $this->client->zrevrange($timestampsKey, 0, -1);
-        if (is_array($sortedSet) && !empty($sortedSet)) {
-            $lastTimestamp = $sortedSet[0];
-            $this->client->zremrangebyscore($timestampsKey, 0, $lastTimestamp - 1);
+            // While we're here, only keep the top 10 items.
+            $sortedSet = $this->client->zrevrange($timestampsKey, 0, -1);
+            if (is_array($sortedSet) && !empty($sortedSet)) {
+                $lastTimestamp = $sortedSet[0];
+                $this->client->zremrangebyscore($timestampsKey, 0, $lastTimestamp - 1);
+            }
+
+            return true;
+        } else {
+            return false;
         }
-
-        return true;
     }
 
     protected function checkPlain($text)
