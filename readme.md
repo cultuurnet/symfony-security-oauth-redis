@@ -1,3 +1,7 @@
+```
+Archived because it is no longer used by any publiq applications and has not been updated significantly since 2015.
+```
+
 # Symfony Security OAuth Redis
 
 [![Build Status](https://travis-ci.org/cultuurnet/symfony-security-oauth-redis.svg?branch=master)](https://travis-ci.org/cultuurnet/symfony-security-oauth-redis) [![Coverage Status](https://coveralls.io/repos/cultuurnet/symfony-security-oauth-redis/badge.svg?branch=master&service=github)](https://coveralls.io/github/cultuurnet/symfony-security-oauth-redis?branch=master)
